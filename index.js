@@ -1,93 +1,162 @@
 const express = require('express');
-const fs = require('fs');
+const mongoose = require('mongoose');
+
+mongoose.connect('mongodb://127.0.0.1:27017/space', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+mongoose.connection.on('connected', () => {
+  console.log('Connected to database');
+});
+
+mongoose.connection.on('disconnected', function () {
+  console.log('Mongoose default connection disconnected');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.log('Error connecting to database', err);
+});
 
 const app = express();
 
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  fs.readFile('./database.json', 'utf8', (err, data) => {
+const starSchema = new mongoose.Schema({
+  name: String,
+  temperature: Number,
+  mass: Number,
+  color: String,
+  radius: Number,
+});
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    min: 3,
+    max: 80,
+  },
+  email: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+    min: 6,
+  },
+});
+
+const StarModel = mongoose.model('Star', starSchema);
+const UserModel = mongoose.model('User', userSchema);
+
+app.post('/join', async (req, res) => {
+  try {
+    const { email, name, password } = req.body;
+
+    const new_user = await UserModel.create({
+      name,
+      email,
+      password,
+    });
+
+    console.log(new_user);
     res.json({
       status: 'success',
-      data: JSON.parse(data),
-      message: 'Data retrieved 🔥🔥',
-      length: JSON.parse(data).length,
+      data: new_user,
+      message: 'Welcome to the club!',
     });
-  });
+  } catch (e) {
+    res.json({
+      status: 'error',
+      data: e,
+      message: 'Sorry we could not create your account',
+    });
+  }
 });
 
-app.post('/', (req, res) => {
-  fs.readFile('./database.json', 'utf8', (err, data) => {
-    const database = JSON.parse(data);
-    const { name, temperature, mass, color, radius } = req.body;
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-    const duplicate = database.find((item) => item.name === name);
+    const user = await UserModel.findOne({ email: email, password: password });
 
-    if (duplicate)
-      return res.json({
-        status: 'failed',
-        message: 'WE ALREADY HAVE THAT DATA',
-      });
-
-    const dataToBeAdded = {
-      name,
-      temperature,
-      mass,
-      color,
-      radius,
-    };
-
-    if (
-      typeof name !== 'string' ||
-      typeof temperature !== 'number' ||
-      typeof mass !== 'number' ||
-      typeof color !== 'string' ||
-      typeof radius !== 'number'
-    )
+    if (!user) {
       return res.json({
         status: 'error',
-        message: 'Invalid data',
+        data: null,
+        message: 'Invalid credentials OR  User does not exist, Please signup',
       });
+    }
 
-    database.push(dataToBeAdded); // # ADDING DATA TO THE DATABASE
-
-    fs.writeFile('./database.json', JSON.stringify(database), (err) => {
-      res.json({
-        status: 'success',
-        data: dataToBeAdded,
-        message: 'Data added 🔥🔥',
-      });
+    res.json({
+      status: 'success',
+      data: user,
+      message: 'Welcome back!',
     });
+  } catch (e) {
+    res.json({
+      status: 'error',
+      data: e,
+      message: 'Sorry we could not login you in',
+    });
+  }
+});
+
+app.get('/', async (req, res) => {
+  const docs = await StarModel.find();
+
+  res.json({
+    status: 'success',
+    data: docs,
+    message: 'Data fetched 🔥🔥',
   });
 });
 
-app.patch('/', (req, res) => {
-  fs.readFile('./database.json', 'utf8', (err, data) => {
-    const database = JSON.parse(data);
-    const index = database.findIndex((item) => item.name === req.query.name);
-    database[index] = { ...database[index], ...req.body };
-    fs.writeFile('./database.json', JSON.stringify(database), (err) => {
-      res.json({
-        status: 'success',
-        data: database[index],
-        message: 'Data updated 🔥🔥',
-      });
+app.post('/', async (req, res) => {
+  try {
+    const doc = await StarModel.create(req.body);
+    res.json({
+      status: 'success',
+      data: doc,
+      message: 'Data saved 🔥🔥',
     });
-  });
+  } catch (e) {
+    res.json({
+      status: 'error',
+      data: e,
+      message: 'Error saving data 🔥🔥',
+    });
+  }
 });
 
-app.delete('/', (req, res) => {
-  fs.readFile('./database.json', 'utf8', (err, data) => {
-    const database = JSON.parse(data);
-    const index = database.findIndex((item) => item.name === req.query.name);
-    database.splice(index, 1);
-    fs.writeFile('./database.json', JSON.stringify(database), (err) => {
-      res.json({
-        status: 'success',
-        data: database[index],
-        message: 'Data deleted 🔥🔥',
-      });
+app.patch('/', async (req, res) => {
+  try {
+    const doc = await StarModel.findByIdAndUpdate(req.query.id, req.body, {
+      new: true,
     });
+
+    res.json({
+      status: 'success',
+      data: doc,
+      message: 'Data updated 🔥🔥',
+    });
+  } catch (e) {
+    res.json({
+      status: 'error',
+      data: e,
+      message: 'Error updating data 🔥🔥',
+    });
+  }
+});
+
+app.delete('/', async (req, res) => {
+  const doc = await StarModel.findByIdAndDelete(req.query.id);
+  res.json({
+    status: 'success',
+    data: doc,
+    message: 'Data deleted 🔥🔥',
   });
 });
 
