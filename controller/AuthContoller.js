@@ -1,33 +1,31 @@
-const express = require('express');
 const UserModel = require('../database/modals/user.modal');
 
-const router = express.Router();
+const signup = async (req, res) => {
+  try {
+    const { email, name, password } = req.body;
 
-router
-  .post('/join', async (req, res) => {
-    try {
-      const { email, name, password } = req.body;
+    const new_user = await UserModel.create({
+      name,
+      email,
+      password,
+    });
 
-      const new_user = await UserModel.create({
-        name,
-        email,
-        password,
-      });
+    res.json({
+      status: 'success',
+      data: new_user,
+      message: 'Welcome to the club!',
+    });
+  } catch (e) {
+    res.json({
+      status: 'error',
+      data: e,
+      message: 'Sorry we could not create your account',
+    });
+  }
+};
 
-      res.json({
-        status: 'success',
-        data: new_user,
-        message: 'Welcome to the club!',
-      });
-    } catch (e) {
-      res.json({
-        status: 'error',
-        data: e,
-        message: 'Sorry we could not create your account',
-      });
-    }
-  })
-  .post('/login', async (req, res) => {
+const signin = async (req, res) => {
+  async (req, res) => {
     try {
       // Verify email and password
       const { email, password } = req.body;
@@ -68,6 +66,25 @@ router
         message: 'Sorry we could not login you in',
       });
     }
-  });
+  };
+};
 
-module.exports = router;
+const verify = async (req, res, next) => {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.json({
+        status: 'error',
+        data: null,
+        message: 'You are not logged in',
+      });
+    }
+
+    next();
+}
+
+module.exports = {
+  signup,
+  signin,
+  verify,
+};
