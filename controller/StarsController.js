@@ -1,8 +1,11 @@
-const StarModel = require('../models/StarModel');
+const StarModel = require('../database/modals/star.modal');
 
 const createStar = async (req, res) => {
   try {
-    const doc = await StarModel.create(req.body);
+    const doc = await StarModel.create({
+      ...req.body,
+      user: req.currentUser._id,
+    });
     res.json({
       status: 'success',
       data: doc,
@@ -23,7 +26,7 @@ const getStars = async (req, res) => {
   res.json({
     status: 'success',
     data: docs,
-    message: `Welcome `,
+    message: `Welcome to the club! ${docs.length}`,
   });
 };
 
@@ -38,9 +41,15 @@ const deleteStar = async (req, res) => {
 
 const updateStar = async (req, res) => {
   try {
-    const doc = await StarModel.findByIdAndUpdate(req.query.id, req.body, {
-      new: true,
-    });
+    const docToBeUpdate = await StarModel.findById(req.query.id);
+
+    if (docToBeUpdate.user.toString() !== req.currentUser._id.toString()) {
+      return res.json({
+        status: 'error',
+        data: null,
+        message: 'You are not authorized to update this star',
+      });
+    }
 
     res.json({
       status: 'success',

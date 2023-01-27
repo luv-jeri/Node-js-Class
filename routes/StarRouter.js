@@ -5,7 +5,7 @@ const {
   deleteStar,
   updateStar,
 } = require('../controller/StarsController');
-const { verify } = require('../controller/AuthController');
+const { verify } = require('../controller/AuthContoller');
 
 const router = express.Router();
 
