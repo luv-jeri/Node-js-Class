@@ -14,7 +14,7 @@ const router = express.Router();
 // router.delete('/', deleteStar);
 // router.patch('/', updateStar);
 
-router.use(verify);
+// router.use(verify);
 
 router.route('/').get(getStars).post(createStar).patch(updateStar).delete(deleteStar);
 

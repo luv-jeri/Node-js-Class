@@ -1,22 +1,29 @@
 const UserModel = require('../database/modals/user.modal');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const sign = require('../utils/sign');
 
 const signup = async (req, res) => {
   try {
     const { email, name, password } = req.body;
 
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     const new_user = await UserModel.create({
       name,
       email,
-      password,
+      password: hashedPassword,
     });
+
+    const token = sign({ ...new_user._doc }, undefined, undefined, res);
 
     res.json({
       status: 'success',
-      data: new_user,
+      data: token,
       message: 'Welcome to the club!',
     });
   } catch (e) {
+    console.log(e);
     res.json({
       status: 'error',
       data: e,
@@ -29,36 +36,30 @@ const signin = async (req, res) => {
   try {
     // Verify email and password
     const { email, password } = req.body;
+
     const user = await UserModel.findOne({
       email,
-      password,
-    });
+    }).select('+password');
 
     if (!user) {
       return res.json({
         status: 'error',
         data: null,
-        message: 'Please register first , or check your email and password',
+        message: 'Please register first !',
       });
     }
 
-    console.log(user);
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
-    const token = jwt.sign(
-      {
-        ...user._doc,
-        loggedInAt: new Date().toISOString(),
-      },
-      'ITS_VERY_IMP',
-      {
-        expiresIn: '1h',
-      }
-    );
+    if (!isPasswordCorrect) {
+      return res.json({
+        status: 'error',
+        data: null,
+        message: 'Password is incorrect',
+      });
+    }
 
-    res.cookie('authorization', token, {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60,
-    });
+    const token = sign({ ...user._doc }, undefined, undefined, res);
 
     res.json({
       status: 'success',
@@ -66,6 +67,7 @@ const signin = async (req, res) => {
       message: 'You are logged in',
     });
   } catch (e) {
+    console.log(e);
     res.json({
       status: 'error',
       data: e,
@@ -77,7 +79,7 @@ const signin = async (req, res) => {
 const verify = async (req, res, next) => {
   let { authorization } = req.headers || req.cookies;
 
-  if(!authorization) authorization = req.cookies.authorization;
+  if (!authorization) authorization = req.cookies.authorization;
 
   console.log(authorization);
 

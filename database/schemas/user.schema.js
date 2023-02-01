@@ -15,10 +15,13 @@ const userSchema = new Schema({
     type: String,
     required: true,
     min: 6,
+    select: false,
   },
   token: {
     type: String,
   },
 });
+
+
 
 module.exports = userSchema;

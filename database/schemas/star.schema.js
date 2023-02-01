@@ -6,10 +6,10 @@ const starSchema = new Schema({
   mass: Number,
   color: String,
   radius: Number,
-  user : {
+  user: {
     type: Schema.Types.ObjectId,
-    ref: 'user'
-  }
+    ref: 'user',
+  },
 });
 
 module.exports = starSchema;
