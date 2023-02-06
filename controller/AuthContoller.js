@@ -106,7 +106,41 @@ const verify = async (req, res, next) => {
   next();
 };
 
+const whoami = async (req, res) => {
+  const { authorization } = req.headers || req.cookies;
+  console.log(req.headers);
+
+  if (!authorization) {
+    return res.json({
+      status: 'error',
+      data: null,
+      message: 'You are not logged in',
+    });
+  }
+
+
+  try {
+    const decoded = jwt.verify(authorization, 'ITS_VERY_IMP');
+
+    const user = await UserModel.findById(decoded._id);
+
+    res.json({
+      status: 'success',
+      data: user,
+      message: `Hey! ${user.name}`,
+    });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      status: 'error',
+      data: e,
+      message: 'Sorry we could not login you in',
+    });
+  }
+};
+
 module.exports = {
+  whoami,
   signup,
   signin,
   verify,

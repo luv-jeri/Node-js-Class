@@ -6,7 +6,7 @@ const createStar = async (req, res) => {
       ...req.body,
       user: req.currentUser._id,
     });
-    
+
     console.log(doc);
     res.json({
       status: 'success',
@@ -64,6 +64,14 @@ const updateStar = async (req, res) => {
         status: 'error',
         data: null,
         message: 'You are not authorized to update this star',
+      });
+    }
+
+    if (!req.query.id) {
+      return res.json({
+        status: 'error',
+        data: null,
+        message: 'Please provide an id',
       });
     }
 
