@@ -1,29 +1,20 @@
 const StarModel = require('../database/modals/star.modal');
+const catcher = require('../utils/catcher');
 
-const createStar = async (req, res) => {
-  try {
-    const doc = await StarModel.create({
-      ...req.body,
-      user: req.currentUser._id,
-    });
+const createStar = catcher(async (req, res, next) => {
+  const doc = await StarModel.create({
+    ...req.body,
+    user: req.currentUser._id,
+  });
 
-    console.log(doc);
-    res.json({
-      status: 'success',
-      data: doc,
-      message: 'Data saved 🔥🔥',
-    });
-  } catch (e) {
-    console.log(e);
-    res.json({
-      status: 'error',
-      data: e,
-      message: 'Error saving data 🔥🔥',
-    });
-  }
-};
+  res.json({
+    status: 'success',
+    data: doc,
+    message: 'Data saved 🔥🔥',
+  });
+});
 
-const getStars = async (req, res) => {
+const getStars = catcher(async (req, res, next) => {
   const docs = await StarModel.find();
 
   res.json({
@@ -31,15 +22,21 @@ const getStars = async (req, res) => {
     data: docs,
     message: `Welcome to the club! ${docs.length}`,
   });
-};
+});
 
-const deleteStar = async (req, res) => {
+const deleteStar = catcher(async (req, res, next) => {
+  if (!req.query.id) {
+    return next({
+      code: 400,
+      message: 'Please provide an id to delete',
+    });
+  }
+
   const doc = await StarModel.findById(req.query.id);
 
   if (doc.user.toString() !== req.currentUser._id.toString()) {
-    return res.json({
-      status: 'error',
-      data: null,
+    return next({
+      code: 401,
       message: 'You are not authorized to delete this star',
     });
   }
@@ -51,48 +48,35 @@ const deleteStar = async (req, res) => {
     data: doc,
     message: 'Data deleted 🔥🔥',
   });
-};
+});
 
-const updateStar = async (req, res) => {
-  try {
-    const docToBeUpdate = await StarModel.findById(req.query.id);
-
-    console.log(docToBeUpdate.user.toString(), req.currentUser._id.toString());
-
-    if (docToBeUpdate.user.toString() !== req.currentUser._id.toString()) {
-      return res.json({
-        status: 'error',
-        data: null,
-        message: 'You are not authorized to update this star',
-      });
-    }
-
-    if (!req.query.id) {
-      return res.json({
-        status: 'error',
-        data: null,
-        message: 'Please provide an id',
-      });
-    }
-
-    const doc = await StarModel.findByIdAndUpdate(req.query.id, req.body, {
-      new: true,
-    });
-
-    res.json({
-      status: 'success',
-      data: doc,
-      message: 'Data updated 🔥🔥',
-    });
-  } catch (e) {
-    console.log(e);
-    res.json({
-      status: 'error',
-      data: e,
-      message: 'Error updating data 🔥🔥',
+const updateStar = catcher(async (req, res) => {
+  if (!req.query.id) {
+    return next({
+      code: 400,
+      message: 'Please provide an id to update',
     });
   }
-};
+
+  const docToBeUpdate = await StarModel.findById(req.query.id);
+
+  if (docToBeUpdate.user.toString() !== req.currentUser._id.toString()) {
+    return next({
+      code: 401,
+      message: 'You are not authorized to update this star',
+    });
+  }
+
+  const doc = await StarModel.findByIdAndUpdate(req.query.id, req.body, {
+    new: true,
+  });
+
+  res.json({
+    status: 'success',
+    data: doc,
+    message: 'Data updated 🔥🔥',
+  });
+});
 
 module.exports = {
   createStar,

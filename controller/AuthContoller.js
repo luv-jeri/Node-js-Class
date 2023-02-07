@@ -2,7 +2,7 @@ const UserModel = require('../database/modals/user.modal');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const sign = require('../utils/sign');
-
+const catcher = require('../utils/catcher');
 const signup = async (req, res) => {
   try {
     const { email, name, password } = req.body;
@@ -84,9 +84,8 @@ const verify = async (req, res, next) => {
   console.log(authorization);
 
   if (!authorization) {
-    return res.json({
-      status: 'error',
-      data: null,
+    return next({
+      code: 401,
       message: 'You are not logged in',
     });
   }
@@ -117,7 +116,6 @@ const whoami = async (req, res) => {
       message: 'You are not logged in',
     });
   }
-
 
   try {
     const decoded = jwt.verify(authorization, 'ITS_VERY_IMP');
