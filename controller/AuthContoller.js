@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const sign = require('../utils/sign');
 const catcher = require('../utils/catcher');
+const _Error = require('../utils/error_');
 const signup = async (req, res) => {
   try {
     const { email, name, password } = req.body;
@@ -77,29 +78,22 @@ const signin = async (req, res) => {
 };
 
 const verify = async (req, res, next) => {
-  let { authorization } = req.headers || req.cookies;
-
-  if (!authorization) authorization = req.cookies.authorization;
-
-  console.log(authorization);
-
-  if (!authorization) {
-    return next({
-      code: 401,
-      message: 'You are not logged in',
-    });
-  }
-
   try {
+    let { authorization } = req.headers || req.cookies;
+
+    if (!authorization) authorization = req.cookies.authorization;
+
+    console.log(authrization);
+
+    if (!authorization) {
+      return next(new _Error('You are not logged in. Please login to get access', 401));
+    }
+
     const decoded = jwt.verify(authorization, 'ITS_VERY_IMP');
 
     req.currentUser = decoded;
   } catch (e) {
-    return res.json({
-      status: 'error',
-      data: null,
-      message: 'Token is invalid',
-    });
+    next(e);
   }
 
   next();

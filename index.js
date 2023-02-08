@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const express = require('express');
 const cors = require('cors');
+const errorHandler = require('./handler/error_handler');
 const app = express();
 
 app.use(express.json());
@@ -27,13 +28,7 @@ app.use('/api/v1/auth', AuthRouter);
 app.use('/dev/api/v1', DevRouter);
 
 //# Error handling middleware
-app.use((err, req, res, next) => {
-  res.status(err.code).json({
-    status: 'error',
-    data: null,
-    message: err.message,
-  });
-});
+app.use(errorHandler);
 
 app.all('*', (req, res, next) => {
   res.status(404).json({

@@ -4,10 +4,7 @@ const catcher = (fn) => {
       fn(req, res);
     } catch (e) {
       console.log(e);
-      next({
-        code: 500,
-        message: 'Something went wrong',
-      });
+      next(e);
     }
   };
 };
